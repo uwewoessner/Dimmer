@@ -48,16 +48,18 @@ dimmerLamp::dimmerLamp(int user_dimmer_pin, int zc_dimmer_pin):
 void dimmerLamp::timer_init(void)
 {
 	hw_timer_t * timer = NULL;
-	// Use 1st timer of 4 (counted from zero).
-  	// Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more info).
-	timer = timerBegin(0, 250, true);
-	// Attach onTimer function to our timer.
-	timerAttachInterrupt(timer, &onTimerISR, true);
-	// Set alarm to call onTimer function every second (value in microseconds).
-  	// Repeat the alarm (third parameter)
-  	timerAlarmWrite(timer, 30, true);
-  	// Start an alarm
-  	timerAlarmEnable(timer);
+	
+	// call timer a 10kHz
+	
+  // Set timer frequency to 1Mhz
+  timer = timerBegin(1000000);
+
+  // Attach onTimer function to our timer.
+  timerAttachInterrupt(timer, &onTimerISR);
+
+  // Set alarm to call onTimer function every 200ys (value in microseconds). 
+  // Repeat the alarm (third parameter) with unlimited count = 0 (fourth parameter).
+  timerAlarm(timer, 198, true, 0);
 }
 
 void dimmerLamp::ext_int_init(void) 

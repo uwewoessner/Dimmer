@@ -7,7 +7,7 @@
 
 #include <ArduinoOTA.h>
 #ifdef ESP32
-#include <esp_int_wdt.h>
+//#include <esp_int_wdt.h>
 #include <esp_task_wdt.h>
 
 #include <WiFi.h>
@@ -37,7 +37,7 @@ char *convert(int, int);    //Convert integer number into octal, hex, etc.
 const char *mqtt_server = "192.168.178.34";
 #include "../../../wifiPasswd.h"
 
-WiFiServer server(80);
+//WiFiServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -217,7 +217,6 @@ char *convert(int num, int base)
 }
 #endif
 
-unsigned long runtime = 29000; // 29 Sekunden Laufzeit von auf bis zu oder umgekehrt
 
 void localLoop();
 
@@ -362,6 +361,8 @@ void sendState()
   {
     client.publish("wohnzimmer/wohnen/status", "OFF");
   }
+  //client.publish("homeassistant/light/essen/config", "{\n\"name\": \"Esstisch\",\n\"unique_id\": \"Esstisch123\",\n\"stat_t\": \"wohnzimmer/essen/status\",\n\"cmd_t\": \"wohnzimmer/essen/command\",\n\"bri_stat_t\": \"wohnzimmer/essen/bstatus\",\n\"bri_cmd_t\": \"wohnzimmer/essen/brightness\"\n}");
+  //client.publish("homeassistant/light/wohnen/config", "{\n\"name\": \"Sofa\",\n\"unique_id\": \"Sofa123\",\n\"stat_t\": \"wohnzimmer/wohnen/status\",\n\"cmd_t\": \"wohnzimmer/wohnen/command\",\n\"bri_stat_t\": \"wohnzimmer/wohnen/bstatus\",\n\"bri_cmd_t\": \"wohnzimmer/wohnen/brightness\"\n}");
 }
 
 void reconnect()
@@ -384,6 +385,10 @@ void reconnect()
     client.subscribe("wohnzimmer/wohnen/brightness");
     client.subscribe("wohnzimmer/essen/brightness");
     client.subscribe("IOT/Ping");
+
+  //client.publish("homeassistant/light/essen/config", "{\n\"name\": \"Esstisch\",\n\"unique_id\": \"Esstisch123\",\n\"stat_t\": \"wohnzimmer/essen/status\",\n\"cmd_t\": \"wohnzimmer/essen/command\",\n\"bri_stat_t\": \"wohnzimmer/essen/bstatus\",\n\"bri_cmd_t\": \"wohnzimmer/essen/brightness\"\n}");
+  //client.publish("homeassistant/light/wohnen/config", "{\n\"name\": \"Sofa\",\n\"unique_id\": \"Sofa123\",\n\"stat_t\": \"wohnzimmer/wohnen/status\",\n\"cmd_t\": \"wohnzimmer/wohnen/command\",\n\"bri_stat_t\": \"wohnzimmer/wohnen/bstatus\",\n\"bri_cmd_t\": \"wohnzimmer/wohnen/brightness\"\n}");
+
     
   }
   else
@@ -411,7 +416,7 @@ void setup()
 
   
   
-	ESP32Encoder::useInternalWeakPullResistors=UP;
+	ESP32Encoder::useInternalWeakPullResistors=puType::up;
 
 	encoder1.attachHalfQuad(pA1, pB1);
 	encoder2.attachHalfQuad(pA2, pB2);
@@ -424,6 +429,8 @@ void setup()
 		
 	encoder1.setCount(50);
 	encoder2.setCount(50);
+  encoder1.setFilter(1023);
+  encoder2.setFilter(1023);
 
   DebugPrintf("vorDimmer1\n");
   dimmer1.begin(NORMAL_MODE,OFF);
@@ -441,7 +448,7 @@ void setup()
 
   ArduinoOTA.setPort(8266);
 #ifdef Wohnzimmer
-  ArduinoOTA.setHostname("dimmerWohnzimmer");
+  ArduinoOTA.setHostname(" ");
 #endif
   ArduinoOTA.onStart([]() {
     DebugPrintf("Start\n");
@@ -451,6 +458,7 @@ void setup()
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+  esp_task_wdt_reset(); // reset the watchdog
     DebugPrintf("Progress: %u %% \r", (progress / (total / 100)));
   });
 
@@ -475,13 +483,18 @@ void setup()
   client.setCallback(callback);
   
 #ifdef ESP32
-  esp_task_wdt_init(25, true); //socket timeout is 15seconds
+
+esp_task_wdt_config_t config;
+config.timeout_ms = 25;
+config.idle_core_mask = ~0;
+config.trigger_panic = true;
+  esp_task_wdt_init(&config); //socket timeout is 15seconds
   esp_task_wdt_add(nullptr);
 #endif
 
   button1.init(false);
   button2.init(false);
-  server.begin();
+  //server.begin();
 }
 
 void reconnectWifi()
@@ -560,7 +573,7 @@ void localLoop()
     
     sendState();
     
-      DebugPrintf("turn1 [%d]\n", power1);
+      //DebugPrintf("turn1 [%d]\n", power1);
     oldCounter1 = currentCounter1;
   }
   if(currentCounter2 != oldCounter2)
